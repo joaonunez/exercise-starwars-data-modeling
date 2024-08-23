@@ -8,7 +8,7 @@ from eralchemy2 import render_er
 Base = declarative_base()
 
 class Citizen(Base):
-    __tablename__ = 'person'
+    __tablename__ = 'citizen'
     chaincode = Column(Integer, primary_key=True, unique=True)
     name = Column(String(250), nullable=False)
     age = Column(Integer, nullable=False)
