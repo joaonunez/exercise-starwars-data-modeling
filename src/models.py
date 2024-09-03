@@ -1,104 +1,105 @@
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECIMAL, Text, Boolean, Enum
+from sqlalchemy import Column, ForeignKey, Integer, String, Date, DateTime, DECIMAL, Text, Enum
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy import create_engine
 from eralchemy2 import render_er
 
 Base = declarative_base()
 
-class Rol(Base):
-    __tablename__ = 'rol'
+class Role(Base):
+    __tablename__ = 'role'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    descripcion = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False)
 
-class Usuario(Base):
-    __tablename__ = 'usuario'
+class User(Base):
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    nombre = Column(String(100), nullable=False)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    rut = Column(String(12), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
-    contraseña = Column(String(255), nullable=False)
-    rol_id = Column(Integer, ForeignKey('rol.id'), nullable=False)
-    fecha_registro = Column(DateTime, default='CURRENT_TIMESTAMP')
-    activo = Column(Boolean, default=True)
+    password = Column(String(255), nullable=False)
+    role_id = Column(Integer, ForeignKey('role.id'), nullable=False)
+    registration_date = Column(DateTime, default='CURRENT_TIMESTAMP')
     
-    rol = relationship("Rol")
+    role = relationship("Role")
 
-class Camping(Base):
-    __tablename__ = 'camping'
+class Campsite(Base):
+    __tablename__ = 'campsite'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    proveedor_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)
-    nombre = Column(String(100), nullable=False)
-    ubicacion = Column(String(255), nullable=False)
-    descripcion = Column(Text, nullable=True)
-    precio = Column(DECIMAL(10, 2), nullable=False)
-    reglas = Column(Text, nullable=True)
-    mapa_url = Column(String(255), nullable=True)
-    imagenes = Column(String(100), nullable=True)  # Cambiado de JSON a VARCHAR(100)
+    provider_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    name = Column(String(100), nullable=False)
+    location = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    price = Column(DECIMAL(10, 2), nullable=False)
+    rules = Column(Text, nullable=True)
+    map_url = Column(String(255), nullable=True)
+    image = Column(String(100), nullable=True)  # Cambiado de 'images' a 'image'
     
-    proveedor = relationship("Usuario")
-    servicios = relationship("Servicio", back_populates="camping")
-    zonas = relationship("Sitio", back_populates="camping")
-    detalles = relationship("DetalleCamping", back_populates="camping")
+    provider = relationship("User")
+    services = relationship("Service", back_populates="campsite")
+    zones = relationship("Site", back_populates="campsite")
+    details = relationship("CampsiteDetail", back_populates="campsite")
 
-class Reserva(Base):
-    __tablename__ = 'reserva'
+class Reservation(Base):
+    __tablename__ = 'reservation'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)
-    camping_id = Column(Integer, ForeignKey('camping.id'), nullable=False)
-    sitio_id = Column(Integer, ForeignKey('sitio.id'), nullable=False)  # Nuevo campo
-    fecha_inicio = Column(Date, nullable=False)
-    fecha_fin = Column(Date, nullable=False)
-    cantidad_personas = Column(Integer, nullable=False)  # Cambiado de 'total' a 'cantidad_personas'
-    fecha_reserva = Column(DateTime, default='CURRENT_TIMESTAMP')
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    site_id = Column(Integer, ForeignKey('site.id'), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    number_of_people = Column(Integer, nullable=False)
+    reservation_date = Column(DateTime, default='CURRENT_TIMESTAMP')
     
-    usuario = relationship("Usuario")
-    camping = relationship("Camping")
-    sitio = relationship("Sitio")
+    user = relationship("User")
+    campsite = relationship("Campsite")
+    site = relationship("Site")
 
-class Reseña(Base):
-    __tablename__ = 'reseña'
+class Review(Base):
+    __tablename__ = 'review'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)
-    camping_id = Column(Integer, ForeignKey('camping.id'), nullable=False)
-    comentario = Column(Text, nullable=True)
-    calificacion = Column(Integer, nullable=False)
-    fecha = Column(DateTime, default='CURRENT_TIMESTAMP')
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    comment = Column(Text, nullable=True)
+    rating = Column(Integer, nullable=False)
+    date = Column(DateTime, default='CURRENT_TIMESTAMP')
     
-    usuario = relationship("Usuario")
-    camping = relationship("Camping")
+    user = relationship("User")
+    campsite = relationship("Campsite")
 
-class CategoriaDeServicio(Base):
-    __tablename__ = 'categoria_de_servicio'
+class ServiceCategory(Base):
+    __tablename__ = 'service_category'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    descripcion = Column(String(100), nullable=False)
+    name = Column(String(100), nullable=False)
 
-class Servicio(Base):
-    __tablename__ = 'servicio'
+class Service(Base):
+    __tablename__ = 'service'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    camping_id = Column(Integer, ForeignKey('camping.id'), nullable=False)
-    categoria_id = Column(Integer, ForeignKey('categoria_de_servicio.id'), nullable=False)
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('service_category.id'), nullable=False)
     
-    camping = relationship("Camping", back_populates="servicios")
-    categoria = relationship("CategoriaDeServicio")
+    campsite = relationship("Campsite", back_populates="services")
+    category = relationship("ServiceCategory")
 
-class Sitio(Base):
-    __tablename__ = 'sitio'
+class Site(Base):
+    __tablename__ = 'site'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    nombre = Column(String(100), nullable=False)  # Nombre o descripción de la zona
-    camping_id = Column(Integer, ForeignKey('camping.id'), nullable=False)
-    estado = Column(Enum('disponible', 'no_disponible', name='estado_zona'), default='disponible')
+    name = Column(String(100), nullable=False)
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    status = Column(Enum('available', 'unavailable', name='site_status'), default='available')
     
-    camping = relationship("Camping", back_populates="zonas")
+    campsite = relationship("Campsite", back_populates="zones")
 
-class DetalleCamping(Base):
-    __tablename__ = 'detalle_camping'
+class CampsiteDetail(Base):
+    __tablename__ = 'campsite_detail'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    camping_id = Column(Integer, ForeignKey('camping.id'), nullable=False)
-    imagen = Column(String(100), nullable=False)  # URL de la imagen
-    regla = Column(Text, nullable=True)  # Regla asociada
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    image = Column(String(100), nullable=False)
+    rule = Column(Text, nullable=True)
     
-    camping = relationship("Camping", back_populates="detalles")
+    campsite = relationship("Campsite", back_populates="details")
 
 ## Draw from SQLAlchemy base
 render_er(Base, 'diagram.png')
