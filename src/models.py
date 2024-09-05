@@ -87,6 +87,8 @@ class Producto(Base):
     nombre = Column(String(100), nullable=False)
     fecha_vencimiento = Column(Date, nullable=False)
     valor = Column(DECIMAL(10, 2), nullable=False)
+    stock_cafeteria = Column(Integer, nullable=False, default=0)  # Control de stock en la cafetería
+    stock_almacen = Column(Integer, nullable=False, default=0)    # Control de stock en el almacén
 
     # Foreign Key y relación con categoría de producto
     categoria_producto_id = Column(Integer, ForeignKey('categoria_producto.id'), nullable=False)
@@ -119,40 +121,38 @@ class Almacen(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     direccion = Column(String(255), nullable=False)
 
-    # Relación con área
-    area_id = Column(Integer, ForeignKey('area.id'), nullable=False)
-    area = relationship('Area')
-
     # Foreign Key para la cafetería
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria')
 
-# Clase Area
+    # Relación con áreas
+    areas = relationship('Area')
+
+# Clase Area (Ahora pertenece a un Almacen)
 class Area(Base):
     __tablename__ = 'area'
     id = Column(Integer, primary_key=True, autoincrement=True)
     cantidad = Column(Integer, nullable=False)
 
-    # Relación con ilera
-    ileras = relationship('Ilera')
+    # Foreign Key y relación con almacén
+    almacen_id = Column(Integer, ForeignKey('almacen.id'), nullable=False)
+    almacen = relationship('Almacen')
 
-# Clase Ilera
-class Ilera(Base):
-    __tablename__ = 'ilera'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    numero = Column(Integer, nullable=False)
-
-    # Relación con caja
+    # Relación con cajas
     cajas = relationship('Caja')
 
-# Clase Caja
+# Clase Caja (Pertenece a un Area)
 class Caja(Base):
     __tablename__ = 'caja'
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero = Column(Integer, nullable=False)
     cantidad = Column(Integer, nullable=False)
 
-    # Relación con producto
+    # Foreign Key y relación con área
+    area_id = Column(Integer, ForeignKey('area.id'), nullable=False)
+    area = relationship('Area')
+
+    # Foreign Key y relación con producto
     producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
     producto = relationship('Producto')
 
