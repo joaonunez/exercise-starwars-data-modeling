@@ -12,6 +12,12 @@ class Role(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
+
 class User(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -25,6 +31,17 @@ class User(Base):
     
     role = relationship("Role")
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "rut": self.rut,
+            "email": self.email,
+            "role": self.role.serialize(),
+            "registration_date": self.registration_date
+        }
+
 class Campsite(Base):
     __tablename__ = 'campsite'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -32,15 +49,46 @@ class Campsite(Base):
     name = Column(String(100), nullable=False)
     location = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    price = Column(DECIMAL(10, 2), nullable=False)
     rules = Column(Text, nullable=True)
     map_url = Column(String(255), nullable=True)
-    image = Column(String(100), nullable=True)  # Cambiado de 'images' a 'image'
+    image = Column(String(100), nullable=True)
     
     provider = relationship("User")
     services = relationship("Service", back_populates="campsite")
     zones = relationship("Site", back_populates="campsite")
     details = relationship("CampsiteDetail", back_populates="campsite")
+    prices = relationship("Price", back_populates="campsite")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "provider": self.provider.serialize(),
+            "name": self.name,
+            "location": self.location,
+            "description": self.description,
+            "rules": self.rules,
+            "map_url": self.map_url,
+            "image": self.image,
+            "services": [service.serialize() for service in self.services],
+            "zones": [zone.serialize() for zone in self.zones],
+            "details": [detail.serialize() for detail in self.details],
+            "prices": [price.serialize() for price in self.prices],
+        }
+
+class Price(Base):
+    __tablename__ = 'price'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    amount_per_day = Column(DECIMAL(10, 2), nullable=False, default=10000)
+
+    campsite = relationship("Campsite", back_populates="prices")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "campsite_id": self.campsite_id,
+            "amount_per_day": float(self.amount_per_day),
+        }
 
 class Reservation(Base):
     __tablename__ = 'reservation'
@@ -53,9 +101,28 @@ class Reservation(Base):
     number_of_people = Column(Integer, nullable=False)
     reservation_date = Column(DateTime, default='CURRENT_TIMESTAMP')
     
+    full_name = Column(String(200), nullable=False)
+    contact_number = Column(String(15), nullable=False)
+    contact_email = Column(String(100), nullable=False)
+
     user = relationship("User")
     campsite = relationship("Campsite")
     site = relationship("Site")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user": self.user.serialize(),
+            "campsite": self.campsite.serialize(),
+            "site": self.site.serialize(),
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+            "number_of_people": self.number_of_people,
+            "reservation_date": self.reservation_date,
+            "full_name": self.full_name,
+            "contact_number": self.contact_number,
+            "contact_email": self.contact_email,
+        }
 
 class Review(Base):
     __tablename__ = 'review'
@@ -69,19 +136,44 @@ class Review(Base):
     user = relationship("User")
     campsite = relationship("Campsite")
 
-class ServiceCategory(Base):
-    __tablename__ = 'service_category'
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user": self.user.serialize(),
+            "campsite": self.campsite.serialize(),
+            "comment": self.comment,
+            "rating": self.rating,
+            "date": self.date,
+        }
+
+class ServiceDetail(Base):
+    __tablename__ = 'service_detail'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
+    price = Column(DECIMAL(10, 2), nullable=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "price": float(self.price),
+        }
 
 class Service(Base):
     __tablename__ = 'service'
     id = Column(Integer, primary_key=True, autoincrement=True)
     campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
-    category_id = Column(Integer, ForeignKey('service_category.id'), nullable=False)
+    service_id = Column(Integer, ForeignKey('service_detail.id'), nullable=False)
     
     campsite = relationship("Campsite", back_populates="services")
-    category = relationship("ServiceCategory")
+    service_detail = relationship("ServiceDetail")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "campsite": self.campsite.serialize(),
+            "service_detail": self.service_detail.serialize(),
+        }
 
 class Site(Base):
     __tablename__ = 'site'
@@ -89,8 +181,18 @@ class Site(Base):
     name = Column(String(100), nullable=False)
     campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
     status = Column(Enum('available', 'unavailable', name='site_status'), default='available')
-    
+    max_of_people = Column(Integer, nullable=False)
+
     campsite = relationship("Campsite", back_populates="zones")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "campsite_id": self.campsite_id,
+            "status": self.status,
+            "max_of_people": self.max_of_people,
+        }
 
 class CampsiteDetail(Base):
     __tablename__ = 'campsite_detail'
@@ -100,6 +202,30 @@ class CampsiteDetail(Base):
     rule = Column(Text, nullable=True)
     
     campsite = relationship("Campsite", back_populates="details")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "campsite_id": self.campsite_id,
+            "image": self.image,
+            "rule": self.rule,
+        }
+
+class ReservationDetail(Base):
+    __tablename__ = 'reservation_detail'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    reservation_id = Column(Integer, ForeignKey('reservation.id'), nullable=False)
+    service_id = Column(Integer, ForeignKey('service_detail.id'), nullable=False)
+    
+    reservation = relationship("Reservation")
+    service_detail = relationship("ServiceDetail")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "reservation": self.reservation.serialize(),
+            "service_detail": self.service_detail.serialize(),
+        }
 
 ## Draw from SQLAlchemy base
 render_er(Base, 'diagram.png')
