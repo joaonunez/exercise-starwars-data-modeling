@@ -106,6 +106,10 @@ class Menu(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     precio = Column(DECIMAL(10, 2), nullable=False)
 
+    # Foreign Key para cafetería
+    cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
+    cafeteria = relationship('Cafeteria', back_populates='menus')
+
     # Relación con productos
     productos = relationship('Producto', secondary='menu_detail')
 
@@ -170,8 +174,9 @@ class Cafeteria(Base):
     # Relaciones
     empleados = relationship('Empleado')
     almacen = relationship('Almacen', uselist=False)
-    menu_id = Column(Integer, ForeignKey('menu.id'))
-    menu = relationship('Menu')
+
+    # Relación con menús
+    menus = relationship('Menu', back_populates='cafeteria')
 
 # Configurar conexión a la base de datos (añadir motor a la base de datos)
 # engine = create_engine('postgresql://usuario:password@localhost:5432/mi_base_de_datos')
