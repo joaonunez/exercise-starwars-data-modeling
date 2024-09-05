@@ -26,6 +26,7 @@ class User(Base):
     rut = Column(String(12), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
+    phone = Column(String(15), nullable=True)  # New field
     role_id = Column(Integer, ForeignKey('role.id'), nullable=False)
     registration_date = Column(DateTime, default='CURRENT_TIMESTAMP')
     
@@ -38,6 +39,7 @@ class User(Base):
             "last_name": self.last_name,
             "rut": self.rut,
             "email": self.email,
+            "phone": self.phone,
             "role": self.role.serialize(),
             "registration_date": self.registration_date
         }
@@ -101,10 +103,6 @@ class Reservation(Base):
     number_of_people = Column(Integer, nullable=False)
     reservation_date = Column(DateTime, default='CURRENT_TIMESTAMP')
     
-    full_name = Column(String(200), nullable=False)
-    contact_number = Column(String(15), nullable=False)
-    contact_email = Column(String(100), nullable=False)
-
     user = relationship("User")
     campsite = relationship("Campsite")
     site = relationship("Site")
@@ -119,9 +117,6 @@ class Reservation(Base):
             "end_date": self.end_date,
             "number_of_people": self.number_of_people,
             "reservation_date": self.reservation_date,
-            "full_name": self.full_name,
-            "contact_number": self.contact_number,
-            "contact_email": self.contact_email,
         }
 
 class Review(Base):
@@ -194,20 +189,33 @@ class Site(Base):
             "max_of_people": self.max_of_people,
         }
 
-class CampsiteDetail(Base):
-    __tablename__ = 'campsite_detail'
+class CampsiteImage(Base):
+    __tablename__ = 'campsite_image'
     id = Column(Integer, primary_key=True, autoincrement=True)
     campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
     image = Column(String(100), nullable=False)
-    rule = Column(Text, nullable=True)
     
-    campsite = relationship("Campsite", back_populates="details")
+    campsite = relationship("Campsite")
 
     def serialize(self):
         return {
             "id": self.id,
             "campsite_id": self.campsite_id,
             "image": self.image,
+        }
+
+class CampsiteRule(Base):
+    __tablename__ = 'campsite_rule'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    campsite_id = Column(Integer, ForeignKey('campsite.id'), nullable=False)
+    rule = Column(Text, nullable=True)
+    
+    campsite = relationship("Campsite")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "campsite_id": self.campsite_id,
             "rule": self.rule,
         }
 
