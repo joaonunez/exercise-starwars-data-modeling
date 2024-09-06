@@ -101,6 +101,10 @@ class Producto(Base):
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria', back_populates='productos')
 
+    # Foreign Key para tipo de ítem
+    tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
+    tipo_item = relationship('TipoItem')
+
 # Clase CategoriaProducto
 class CategoriaProducto(Base):
     __tablename__ = 'categoria_producto'
@@ -117,6 +121,10 @@ class ComboMenu(Base):
     # Foreign Key para la cafetería
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria')
+
+    # Foreign Key para tipo de ítem
+    tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
+    tipo_item = relationship('TipoItem')
 
     # Relación con productos a través de la tabla intermedia
     productos = relationship('Producto', secondary='detalle_combo_menu')
