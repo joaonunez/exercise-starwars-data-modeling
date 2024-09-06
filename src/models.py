@@ -7,7 +7,7 @@ from eralchemy2 import render_er
 
 Base = declarative_base()
 
-# Clase Pais
+# Clase País
 class Pais(Base):
     __tablename__ = 'pais'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -16,7 +16,7 @@ class Pais(Base):
     # Relación con regiones
     regiones = relationship('Region')
 
-# Clase Region
+# Clase Región
 class Region(Base):
     __tablename__ = 'region'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -53,15 +53,15 @@ class Beneficio(Base):
     precio = Column(Integer, nullable=False)
     descripcion = Column(String(255), nullable=False)
 
-# Tabla intermedia User-Beneficio
-user_beneficio = Table('user_beneficio', Base.metadata,
-    Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
+# Tabla intermedia Usuario-Beneficio
+usuario_beneficio = Table('usuario_beneficio', Base.metadata,
+    Column('usuario_id', Integer, ForeignKey('usuario.id'), primary_key=True),
     Column('beneficio_id', Integer, ForeignKey('beneficio.id'), primary_key=True)
 )
 
-# Clase User (anteriormente Empleado)
-class User(Base):
-    __tablename__ = 'user'
+# Clase Usuario (anteriormente User)
+class Usuario(Base):
+    __tablename__ = 'usuario'
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
     apellido_paterno = Column(String(100), nullable=False)
@@ -72,14 +72,14 @@ class User(Base):
     # Nuevos campos para el login
     usuario = Column(String(50), unique=True, nullable=False)  # Usuario único para el login
     correo = Column(String(100), unique=True, nullable=False)  # Correo único para el login
-    contraseña = Column(String(255), nullable=False)  # Contraseña encriptada para el login
+    contrasena = Column(String(255), nullable=False)  # Contraseña encriptada para el login
 
     # Foreign Key y Relaciones
     rol_id = Column(Integer, ForeignKey('rol.id'), nullable=False)
     rol = relationship('Rol')
 
     # Relación con beneficios a través de la tabla intermedia
-    beneficios = relationship('Beneficio', secondary=user_beneficio)
+    beneficios = relationship('Beneficio', secondary=usuario_beneficio)
 
     # Foreign Key para la cafetería
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
@@ -135,7 +135,7 @@ detalle_combo_menu = Table('detalle_combo_menu', Base.metadata,
     Column('producto_id', Integer, ForeignKey('producto.id'), primary_key=True)
 )
 
-# Clase Cafeteria
+# Clase Cafetería
 class Cafeteria(Base):
     __tablename__ = 'cafeteria'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -147,9 +147,9 @@ class Cafeteria(Base):
     comuna = relationship('Comuna')
 
     # Relaciones
-    users = relationship('User')
-    productos = relationship('Producto', back_populates='cafeteria')
-    combos = relationship('ComboMenu')
+    usuarios = relationship('Usuario')  # Relación con usuarios
+    productos = relationship('Producto', back_populates='cafeteria')  # Relación con productos
+    combos = relationship('ComboMenu')  # Relación con combos
 
 # Clase TipoItem
 class TipoItem(Base):
@@ -166,11 +166,11 @@ class Venta(Base):
     monto_total = Column(Integer, nullable=False)
     estado = Column(String(50), nullable=False, default="pendiente")  # Estado de la venta
     comentarios = Column(Text, nullable=True)  # Campo para comentarios opcionales
-    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)  # Cambiado a user_id
+    usuario_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)  # Cambiado a usuario_id
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
 
     # Relaciones
-    user = relationship('User')  # Relación con User
+    usuario = relationship('Usuario')  # Relación con Usuario
     cafeteria = relationship('Cafeteria')
     detalles = relationship('DetalleVenta', back_populates='venta')
 
@@ -200,4 +200,4 @@ class DetalleVenta(Base):
 # Base.metadata.create_all(engine)
 
 # Dibujar el diagrama
-render_er(Base, 'diagram.png')
+render_er(Base, 'diagrama_cafeteria.png')
