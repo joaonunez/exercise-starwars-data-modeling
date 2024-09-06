@@ -80,87 +80,49 @@ class Empleado(Base):
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria')
 
-# Clase Producto
+# Clase Producto (Se venden individualmente)
 class Producto(Base):
     __tablename__ = 'producto'
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
-    fecha_vencimiento = Column(Date, nullable=False)
     valor = Column(DECIMAL(10, 2), nullable=False)
-    stock_cafeteria = Column(Integer, nullable=False, default=0)  # Control de stock en la cafetería
-    stock_almacen = Column(Integer, nullable=False, default=0)    # Control de stock en el almacén
+    stock = Column(Integer, nullable=False, default=0)  # Campo de stock agregado
 
     # Foreign Key y relación con categoría de producto
     categoria_producto_id = Column(Integer, ForeignKey('categoria_producto.id'), nullable=False)
     categoria_producto = relationship('CategoriaProducto')
 
-# Clase CategoriaProducto (anteriormente TipoProducto)
+    # Foreign Key para cafetería
+    cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
+    cafeteria = relationship('Cafeteria', back_populates='productos')
+
+# Clase CategoriaProducto
 class CategoriaProducto(Base):
     __tablename__ = 'categoria_producto'
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
 
-# Clase Menu
-class Menu(Base):
-    __tablename__ = 'menu'
+# Clase ComboMenu (Contiene los combos)
+class ComboMenu(Base):
+    __tablename__ = 'combo_menu'
     id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100), nullable=False)  # Nuevo campo 'nombre' agregado
     precio = Column(DECIMAL(10, 2), nullable=False)
-
-    # Foreign Key para cafetería
-    cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
-    cafeteria = relationship('Cafeteria', back_populates='menus')
-
-    # Relación con productos
-    productos = relationship('Producto', secondary='menu_detail')
-
-# Tabla intermedia para la relación muchos a muchos entre Menu y Producto
-menu_detail = Table('menu_detail', Base.metadata,
-    Column('menu_id', Integer, ForeignKey('menu.id'), primary_key=True),
-    Column('producto_id', Integer, ForeignKey('producto.id'), primary_key=True)
-)
-
-# Clase Almacen
-class Almacen(Base):
-    __tablename__ = 'almacen'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    direccion = Column(String(255), nullable=False)
 
     # Foreign Key para la cafetería
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria')
 
-    # Relación con áreas
-    areas = relationship('Area')
+    # Relación con productos a través de la tabla intermedia
+    productos = relationship('Producto', secondary='combo_menu_detail')
 
-# Clase Area (Ahora pertenece a un Almacen)
-class Area(Base):
-    __tablename__ = 'area'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    cantidad = Column(Integer, nullable=False)
+# Tabla intermedia para la relación muchos a muchos entre ComboMenu y Producto
+combo_menu_detail = Table('combo_menu_detail', Base.metadata,
+    Column('combo_menu_id', Integer, ForeignKey('combo_menu.id'), primary_key=True),
+    Column('producto_id', Integer, ForeignKey('producto.id'), primary_key=True)
+)
 
-    # Foreign Key y relación con almacén
-    almacen_id = Column(Integer, ForeignKey('almacen.id'), nullable=False)
-    almacen = relationship('Almacen')
-
-    # Relación con cajas
-    cajas = relationship('Caja')
-
-# Clase Caja (Pertenece a un Area)
-class Caja(Base):
-    __tablename__ = 'caja'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    numero = Column(Integer, nullable=False)
-    cantidad = Column(Integer, nullable=False)
-
-    # Foreign Key y relación con área
-    area_id = Column(Integer, ForeignKey('area.id'), nullable=False)
-    area = relationship('Area')
-
-    # Foreign Key y relación con producto
-    producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
-    producto = relationship('Producto')
-
-# Clase Cafetería
+# Clase Cafeteria
 class Cafeteria(Base):
     __tablename__ = 'cafeteria'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -173,14 +135,18 @@ class Cafeteria(Base):
 
     # Relaciones
     empleados = relationship('Empleado')
-    almacen = relationship('Almacen', uselist=False)
+    productos = relationship('Producto', back_populates='cafeteria')  # Relación con productos
+    combos = relationship('ComboMenu')
 
-    # Relación con menús
-    menus = relationship('Menu', back_populates='cafeteria')
+# Nueva Clase TipoItem
+class TipoItem(Base):
+    __tablename__ = 'tipo_item'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100), nullable=False)  # Tipo de ítem: 'producto' o 'combo'
 
 # Configurar conexión a la base de datos (añadir motor a la base de datos)
 # engine = create_engine('postgresql://usuario:password@localhost:5432/mi_base_de_datos')
 # Base.metadata.create_all(engine)
 
-## Dibujar el diagrama
+# Dibujar el diagrama
 render_er(Base, 'diagram.png')
