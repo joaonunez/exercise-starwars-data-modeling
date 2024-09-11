@@ -101,7 +101,15 @@ class HistorialPedidos(Base):
     venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
     fecha = Column(Date, nullable=False)
 
-# Clase Producto
+# Clase CategoriaProducto
+class CategoriaProducto(Base):
+    __tablename__ = 'categoria_producto'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100), nullable=False)
+
+    productos = relationship('Producto', back_populates='categoria_producto')
+
+# Clase Producto (modificada para la relación con CategoriaProducto)
 class Producto(Base):
     __tablename__ = 'producto'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -110,7 +118,7 @@ class Producto(Base):
     stock = Column(Integer, nullable=False, default=0)
     
     categoria_producto_id = Column(Integer, ForeignKey('categoria_producto.id'), nullable=False)
-    categoria_producto = relationship('CategoriaProducto')
+    categoria_producto = relationship('CategoriaProducto', back_populates='productos')
 
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria', back_populates='productos')
@@ -118,7 +126,6 @@ class Producto(Base):
     tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
     tipo_item = relationship('TipoItem')
 
-    # Campo de calificación de producto
     calificacion = Column(Float, default=0.0)  # Calificación de 0 a 5
 
 # Clase ComboMenu
