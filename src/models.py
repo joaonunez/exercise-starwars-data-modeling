@@ -12,7 +12,7 @@ class Pais(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
 
-    regiones = relationship('Region')
+    regiones = relationship('Region', backref='pais')
 
 # Clase Región
 class Region(Base):
@@ -21,9 +21,7 @@ class Region(Base):
     nombre = Column(String(100), nullable=False)
 
     pais_id = Column(Integer, ForeignKey('pais.id'), nullable=False)
-    pais = relationship('Pais')
-
-    comunas = relationship('Comuna')
+    comunas = relationship('Comuna', backref='region')
 
 # Clase Comuna
 class Comuna(Base):
@@ -32,7 +30,6 @@ class Comuna(Base):
     nombre = Column(String(100), nullable=False)
 
     region_id = Column(Integer, ForeignKey('region.id'), nullable=False)
-    region = relationship('Region')
 
 # Clase Rol
 class Rol(Base):
@@ -48,63 +45,42 @@ class Beneficio(Base):
     precio = Column(Integer, nullable=False)
     descripcion = Column(String(255), nullable=False)
 
-# Tabla intermedia Usuario-Beneficio
-usuario_beneficio = Table('usuario_beneficio', Base.metadata,
-    Column('usuario_id', Integer, ForeignKey('usuario.rut'), primary_key=True),
-    Column('beneficio_id', Integer, ForeignKey('beneficio.id'), primary_key=True)
-)
-
-# Clase Usuario (funcionarios del café)
+# Clase Usuario
 class Usuario(Base):
     __tablename__ = 'usuario'
-    rut = Column(String(12), primary_key=True)  # Ahora el rut es el ID primario
+    rut = Column(String(12), primary_key=True)
     nombre = Column(String(100), nullable=False)
     apellido_paterno = Column(String(100), nullable=False)
     apellido_materno = Column(String(100), nullable=False)
-    
-    usuario = Column(String(50), unique=True, nullable=False)  
-    correo = Column(String(100), unique=True, nullable=False)  
-    contrasena = Column(String(255), nullable=False)  
+    usuario = Column(String(50), unique=True, nullable=False)
+    correo = Column(String(100), unique=True, nullable=False)
+    contrasena = Column(String(255), nullable=False)
 
     rol_id = Column(Integer, ForeignKey('rol.id'), nullable=False)
-    rol = relationship('Rol')
-
-    beneficios = relationship('Beneficio', secondary=usuario_beneficio)
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
-    cafeteria = relationship('Cafeteria')
 
-# Nueva tabla Cliente
+# Clase Cliente
 class Cliente(Base):
     __tablename__ = 'cliente'
-    rut = Column(String(12), primary_key=True)  # El rut es el ID primario
+    rut = Column(String(12), primary_key=True)
     nombre = Column(String(100), nullable=False)
-    correo = Column(String(100), unique=True, nullable=False)  
-    contrasena = Column(String(255), nullable=False)  
+    correo = Column(String(100), unique=True, nullable=False)
+    contrasena = Column(String(255), nullable=False)
     usuario = Column(String(50), unique=True, nullable=False)
 
-    # Relación con favoritos e historial de pedidos
-    favoritos = relationship('Favoritos')
-    historial_pedidos = relationship('HistorialPedidos')
-
-# Nueva tabla Favoritos
+# Clase Favoritos
 class Favoritos(Base):
     __tablename__ = 'favoritos'
     id = Column(Integer, primary_key=True, autoincrement=True)
     cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
 
-# Nueva tabla HistorialPedidos
-# Nueva tabla HistorialPedidos
+# Clase HistorialPedidos
 class HistorialPedidos(Base):
     __tablename__ = 'historial_pedidos'
     id = Column(Integer, primary_key=True, autoincrement=True)
     cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
-
-    # Relación con la clase Venta
-    venta = relationship('Venta')
-
-
 
 # Clase CategoriaProducto
 class CategoriaProducto(Base):
@@ -112,26 +88,20 @@ class CategoriaProducto(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
 
-    productos = relationship('Producto', back_populates='categoria_producto')
-
-# Clase Producto (modificada para la relación con CategoriaProducto)
+# Clase Producto
 class Producto(Base):
     __tablename__ = 'producto'
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
     precio = Column(Integer, nullable=False)
     stock = Column(Integer, nullable=False, default=0)
-    
+
+    # Nueva columna para almacenar la calificación promedio
+    calificacion = Column(Float, nullable=True, default=0.0)
+
     categoria_producto_id = Column(Integer, ForeignKey('categoria_producto.id'), nullable=False)
-    categoria_producto = relationship('CategoriaProducto', back_populates='productos')
-
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
-    cafeteria = relationship('Cafeteria', back_populates='productos')
-
     tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
-    tipo_item = relationship('TipoItem')
-
-    calificacion = Column(Float, default=0.0)  # Calificación de 0 a 5
 
 # Clase ComboMenu
 class ComboMenu(Base):
@@ -141,15 +111,11 @@ class ComboMenu(Base):
     precio = Column(Integer, nullable=False)
 
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
-    cafeteria = relationship('Cafeteria')
-
     tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
-    tipo_item = relationship('TipoItem')
 
-    productos = relationship('Producto', secondary='detalle_combo_menu')
-
-# Tabla intermedia ComboMenu-Producto
-detalle_combo_menu = Table('detalle_combo_menu', Base.metadata,
+# Tabla intermedia ComboMenu-Producto (Muchos a muchos)
+detalle_combo_menu = Table(
+    'detalle_combo_menu', Base.metadata,
     Column('combo_menu_id', Integer, ForeignKey('combo_menu.id'), primary_key=True),
     Column('producto_id', Integer, ForeignKey('producto.id'), primary_key=True)
 )
@@ -160,13 +126,7 @@ class Cafeteria(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
     direccion = Column(String(255), nullable=False)
-
     comuna_id = Column(Integer, ForeignKey('comuna.id'), nullable=False)
-    comuna = relationship('Comuna')
-
-    usuarios = relationship('Usuario')  
-    productos = relationship('Producto', back_populates='cafeteria')  
-    combos = relationship('ComboMenu')  
 
 # Clase TipoItem
 class TipoItem(Base):
@@ -174,16 +134,15 @@ class TipoItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
 
-# Nueva tabla Mesa
+# Clase Mesa
 class Mesa(Base):
     __tablename__ = 'mesa'
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero = Column(Integer, nullable=False)
-    qr_code = Column(String(255), nullable=False)  # Código QR (puede ser un URL o datos del QR)
+    qr_code = Column(String(255), nullable=False)
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
-    cafeteria = relationship('Cafeteria')
 
-# Modificación de la clase Venta para incluir relación con Mesero y Mesa
+# Clase Venta
 class Venta(Base):
     __tablename__ = 'venta'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -192,20 +151,12 @@ class Venta(Base):
     monto_total = Column(Integer, nullable=False)
     estado = Column(String(50), nullable=False, default="pendiente")
     comentarios = Column(Text, nullable=True)
-    
-    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)  # Relacionado con Cliente
+
+    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
-    mesero_rut = Column(String(12), ForeignKey('usuario.rut'), nullable=True)  # Relación con el Mesero (opcional)
-    mesa_id = Column(Integer, ForeignKey('mesa.id'), nullable=True)  # Relación con la Mesa (opcional)
+    mesero_rut = Column(String(12), ForeignKey('usuario.rut'), nullable=True)
+    mesa_id = Column(Integer, ForeignKey('mesa.id'), nullable=True)
 
-    cliente = relationship('Cliente')
-    cafeteria = relationship('Cafeteria')
-    mesero = relationship('Usuario')  # Relacionado con el mesero
-    mesa = relationship('Mesa')  # Relacionado con la mesa
-
-    detalles = relationship('DetalleVenta', back_populates='venta')
-
-# Clase DetalleVenta
 # Clase DetalleVenta
 class DetalleVenta(Base):
     __tablename__ = 'detalle_venta'
@@ -213,25 +164,17 @@ class DetalleVenta(Base):
     venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
     cantidad = Column(Integer, nullable=False)
     precio_unitario = Column(Integer, nullable=False)
-    tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)  # Relación con TipoItem
-    item_id = Column(Integer, nullable=False)  # Nueva columna agregada para el ID del item
-    tipo_item = relationship('TipoItem')  # Relación con TipoItem
+    tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
+    item_id = Column(Integer, nullable=False)
 
-    # Relación con la clase Venta
-    venta = relationship('Venta', back_populates='detalles')
-
-
+# Clase CalificacionProducto
 class CalificacionProducto(Base):
     __tablename__ = 'calificacion_producto'
     id = Column(Integer, primary_key=True, autoincrement=True)
     cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
-    calificacion = Column(Float, nullable=False)  # Rango de 0 a 5, por ejemplo
-    fecha = Column(Date, nullable=False)  # Fecha en que se realizó la calificación
-
-    cliente = relationship('Cliente')
-    producto = relationship('Producto')    
-
+    calificacion = Column(Float, nullable=False)
+    fecha = Column(Date, nullable=False)
 
 
 # Dibujar el diagrama
