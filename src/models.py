@@ -94,12 +94,17 @@ class Favoritos(Base):
     producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
 
 # Nueva tabla HistorialPedidos
+# Nueva tabla HistorialPedidos
 class HistorialPedidos(Base):
     __tablename__ = 'historial_pedidos'
     id = Column(Integer, primary_key=True, autoincrement=True)
     cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
-    fecha = Column(Date, nullable=False)
+
+    # Relación con la clase Venta
+    venta = relationship('Venta')
+
+
 
 # Clase CategoriaProducto
 class CategoriaProducto(Base):
@@ -201,19 +206,20 @@ class Venta(Base):
     detalles = relationship('DetalleVenta', back_populates='venta')
 
 # Clase DetalleVenta
+# Clase DetalleVenta
 class DetalleVenta(Base):
     __tablename__ = 'detalle_venta'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    
     venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
-    item_id = Column(Integer, nullable=False)
-    tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)
-    tipo_item = relationship('TipoItem')
-
     cantidad = Column(Integer, nullable=False)
     precio_unitario = Column(Integer, nullable=False)
-    
+    tipo_item_id = Column(Integer, ForeignKey('tipo_item.id'), nullable=False)  # Relación con TipoItem
+    item_id = Column(Integer, nullable=False)  # Nueva columna agregada para el ID del item
+    tipo_item = relationship('TipoItem')  # Relación con TipoItem
+
+    # Relación con la clase Venta
     venta = relationship('Venta', back_populates='detalles')
+
 
 class CalificacionProducto(Base):
     __tablename__ = 'calificacion_producto'
