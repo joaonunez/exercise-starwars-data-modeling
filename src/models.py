@@ -1,6 +1,7 @@
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, Time, Table, Text, Float, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Table, Text, Float
+from datetime import datetime
 from sqlalchemy.orm import relationship, declarative_base
 from eralchemy2 import render_er
 
@@ -146,8 +147,7 @@ class Mesa(Base):
 class Venta(Base):
     __tablename__ = 'venta'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    fecha = Column(Date, nullable=False)
-    hora = Column(Time, nullable=False)
+    fecha = Column(DateTime, nullable=False, default=datetime.now)  # Usamos DateTime para incluir fecha y hora
     monto_total = Column(Integer, nullable=False)
     estado = Column(String(50), nullable=False, default="pendiente")
     comentarios = Column(Text, nullable=True)
@@ -174,8 +174,7 @@ class CalificacionProducto(Base):
     cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
     calificacion = Column(Float, nullable=False)
-    fecha = Column(Date, nullable=False)
-
+    fecha = Column(DateTime, nullable=False, default=datetime.now)
 
 # Dibujar el diagrama
 render_er(Base, 'diagrama_cafeteria.png')
