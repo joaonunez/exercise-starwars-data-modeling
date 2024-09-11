@@ -2,7 +2,6 @@ import os
 import sys
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, Time, Table, Text, Float, Boolean
 from sqlalchemy.orm import relationship, declarative_base
-from sqlalchemy import create_engine
 from eralchemy2 import render_er
 
 Base = declarative_base()
@@ -51,34 +50,17 @@ class Beneficio(Base):
 
 # Tabla intermedia Usuario-Beneficio
 usuario_beneficio = Table('usuario_beneficio', Base.metadata,
-    Column('usuario_id', Integer, ForeignKey('usuario.id'), primary_key=True),
+    Column('usuario_id', Integer, ForeignKey('usuario.rut'), primary_key=True),
     Column('beneficio_id', Integer, ForeignKey('beneficio.id'), primary_key=True)
 )
 
-# Nueva tabla Favoritos
-class Favoritos(Base):
-    __tablename__ = 'favoritos'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)
-    producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
-
-# Nueva tabla HistorialPedidos
-class HistorialPedidos(Base):
-    __tablename__ = 'historial_pedidos'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    usuario_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)
-    venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
-    fecha = Column(Date, nullable=False)
-
-# Clase Usuario
+# Clase Usuario (funcionarios del café)
 class Usuario(Base):
     __tablename__ = 'usuario'
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    rut = Column(String(12), primary_key=True)  # Ahora el rut es el ID primario
     nombre = Column(String(100), nullable=False)
     apellido_paterno = Column(String(100), nullable=False)
     apellido_materno = Column(String(100), nullable=False)
-    rut = Column(String(12), unique=True, nullable=False)
-    fecha_nacimiento = Column(Date, nullable=False)
     
     usuario = Column(String(50), unique=True, nullable=False)  
     correo = Column(String(100), unique=True, nullable=False)  
@@ -91,9 +73,33 @@ class Usuario(Base):
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
     cafeteria = relationship('Cafeteria')
 
-    # Nuevas relaciones para favoritos y historial de pedidos
+# Nueva tabla Cliente
+class Cliente(Base):
+    __tablename__ = 'cliente'
+    rut = Column(String(12), primary_key=True)  # El rut es el ID primario
+    nombre = Column(String(100), nullable=False)
+    correo = Column(String(100), unique=True, nullable=False)  
+    contrasena = Column(String(255), nullable=False)  
+    usuario = Column(String(50), unique=True, nullable=False)
+
+    # Relación con favoritos e historial de pedidos
     favoritos = relationship('Favoritos')
     historial_pedidos = relationship('HistorialPedidos')
+
+# Nueva tabla Favoritos
+class Favoritos(Base):
+    __tablename__ = 'favoritos'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
+    producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
+
+# Nueva tabla HistorialPedidos
+class HistorialPedidos(Base):
+    __tablename__ = 'historial_pedidos'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
+    venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
+    fecha = Column(Date, nullable=False)
 
 # Clase Producto
 class Producto(Base):
@@ -156,7 +162,16 @@ class TipoItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
 
-# Clase Venta
+# Nueva tabla Mesa
+class Mesa(Base):
+    __tablename__ = 'mesa'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    numero = Column(Integer, nullable=False)
+    qr_code = Column(String(255), nullable=False)  # Código QR (puede ser un URL o datos del QR)
+    cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
+    cafeteria = relationship('Cafeteria')
+
+# Modificación de la clase Venta para incluir relación con Mesero y Mesa
 class Venta(Base):
     __tablename__ = 'venta'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -166,11 +181,16 @@ class Venta(Base):
     estado = Column(String(50), nullable=False, default="pendiente")
     comentarios = Column(Text, nullable=True)
     
-    usuario_id = Column(Integer, ForeignKey('usuario.id'), nullable=False)
+    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)  # Relacionado con Cliente
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
+    mesero_rut = Column(String(12), ForeignKey('usuario.rut'), nullable=True)  # Relación con el Mesero (opcional)
+    mesa_id = Column(Integer, ForeignKey('mesa.id'), nullable=True)  # Relación con la Mesa (opcional)
 
-    usuario = relationship('Usuario')
+    cliente = relationship('Cliente')
     cafeteria = relationship('Cafeteria')
+    mesero = relationship('Usuario')  # Relacionado con el mesero
+    mesa = relationship('Mesa')  # Relacionado con la mesa
+
     detalles = relationship('DetalleVenta', back_populates='venta')
 
 # Clase DetalleVenta
@@ -188,9 +208,18 @@ class DetalleVenta(Base):
     
     venta = relationship('Venta', back_populates='detalles')
 
-# Configurar conexión a la base de datos
-# engine = create_engine('postgresql://usuario:password@localhost:5432/mi_base_de_datos')
-# Base.metadata.create_all(engine)
+class CalificacionProducto(Base):
+    __tablename__ = 'calificacion_producto'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
+    producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
+    calificacion = Column(Float, nullable=False)  # Rango de 0 a 5, por ejemplo
+    fecha = Column(Date, nullable=False)  # Fecha en que se realizó la calificación
+
+    cliente = relationship('Cliente')
+    producto = relationship('Producto')    
+
+
 
 # Dibujar el diagrama
 render_er(Base, 'diagrama_cafeteria.png')
