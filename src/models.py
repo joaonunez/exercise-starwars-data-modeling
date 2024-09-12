@@ -46,6 +46,13 @@ class Beneficio(Base):
     precio = Column(Integer, nullable=False)
     descripcion = Column(String(255), nullable=False)
 
+# Tabla intermedia Beneficio-Usuario (Muchos a muchos)
+beneficio_usuario = Table(
+    'beneficio_usuario', Base.metadata,
+    Column('beneficio_id', Integer, ForeignKey('beneficio.id'), primary_key=True),
+    Column('usuario_rut', String(12), ForeignKey('usuario.rut'), primary_key=True)
+)
+
 # Clase Usuario
 class Usuario(Base):
     __tablename__ = 'usuario'
@@ -59,6 +66,8 @@ class Usuario(Base):
 
     rol_id = Column(Integer, ForeignKey('rol.id'), nullable=False)
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
+    
+    beneficios = relationship('Beneficio', secondary=beneficio_usuario, backref='usuarios')
 
 # Clase Cliente
 class Cliente(Base):
@@ -76,13 +85,6 @@ class Favoritos(Base):
     cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
     producto_id = Column(Integer, ForeignKey('producto.id'), nullable=False)
 
-# Clase HistorialPedidos
-class HistorialPedidos(Base):
-    __tablename__ = 'historial_pedidos'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    cliente_rut = Column(String(12), ForeignKey('cliente.rut'), nullable=False)
-    venta_id = Column(Integer, ForeignKey('venta.id'), nullable=False)
-
 # Clase CategoriaProducto
 class CategoriaProducto(Base):
     __tablename__ = 'categoria_producto'
@@ -96,9 +98,6 @@ class Producto(Base):
     nombre = Column(String(100), nullable=False)
     precio = Column(Integer, nullable=False)
     stock = Column(Integer, nullable=False, default=0)
-
-    # Nueva columna para almacenar la calificación promedio
-    calificacion = Column(Float, nullable=True, default=0.0)
 
     categoria_producto_id = Column(Integer, ForeignKey('categoria_producto.id'), nullable=False)
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
@@ -121,7 +120,7 @@ detalle_combo_menu = Table(
     Column('producto_id', Integer, ForeignKey('producto.id'), primary_key=True)
 )
 
-# Clase Cafetería
+# Clase Cafeteria
 class Cafeteria(Base):
     __tablename__ = 'cafeteria'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -140,7 +139,7 @@ class Mesa(Base):
     __tablename__ = 'mesa'
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero = Column(Integer, nullable=False)
-    qr_code = Column(String(255), nullable=False)
+    qr_code = Column(String(255), nullable=False)  # Almacenamiento de URL del código QR
     cafeteria_id = Column(Integer, ForeignKey('cafeteria.id'), nullable=False)
 
 # Clase Venta
